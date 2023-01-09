@@ -18,29 +18,20 @@ class AdminBlogController extends Controller
      */
     public function index()
     {
-        $blogs = Blog::all();
+        $blogs = Blog::latest("updated_at")->paginate(10);
         return view("admin.blogs.index", ["blogs" => $blogs]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+ 
     public function create()
     {
         return view("admin.blogs.create");
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(StoreBlogRequest $request)
     {
-        $savedImagePath = $request->file("image")->store("blog", "public");
+        $savedImagePath = $request->file("image")->store("blogs", "public");
         $blog = new Blog($request->validated());
         $blog->image = $savedImagePath;
         $blog->save();
@@ -64,7 +55,7 @@ class AdminBlogController extends Controller
     {
         $blog = Blog::findOrFail($id);
 
-        return view("admin.blogs.edit", ["blog" => $blog]);
+        return view("admin.blogs.edit", ["blogs" => $blog]);
     }
 
 
@@ -83,14 +74,12 @@ class AdminBlogController extends Controller
         return to_route("admin.blogs.index")->with("success", "ブログを更新しました");
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
-        //
+        $blog = Blog::findOrFail($id);
+        $blog->delete();
+        Storage::disk("public")->delete($blog->image);
+
+        return to_route("admin.blogs.index")->with("success", "ブログを削除しました");
     }
 }
