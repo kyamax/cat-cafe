@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Admin\StoreBlogRequest;
 use App\Models\Blog;
+use App\Http\Requests\Admin\UpdateBlogRequest;
+use Illuminate\Support\Facades\Storage;
 
 class AdminBlogController extends Controller
 {
@@ -16,7 +18,8 @@ class AdminBlogController extends Controller
      */
     public function index()
     {
-        return view("admin.blogs.index");
+        $blogs = Blog::all();
+        return view("admin.blogs.index", ["blogs" => $blogs]);
     }
 
     /**
@@ -56,27 +59,28 @@ class AdminBlogController extends Controller
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function edit($id)
     {
-        //
+        $blog = Blog::findOrFail($id);
+
+        return view("admin.blogs.edit", ["blog" => $blog]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+
+    public function update(UpdateBlogRequest $request, $id)
     {
-        //
+        $blog = Blog::findOrFail($id);
+        $updateData = $request->validated();
+
+        if($request->has("image")){
+            Storage::disk("public")->delete($blog->image);
+            $updateData["image"] = $request->file("image")->store("blogs", "public");
+        }
+
+        $blog->update($updateData);
+
+        return to_route("admin.blogs.index")->with("success", "ブログを更新しました");
     }
 
     /**
