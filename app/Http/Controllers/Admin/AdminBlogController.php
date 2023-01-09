@@ -7,15 +7,13 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Admin\StoreBlogRequest;
 use App\Models\Blog;
 use App\Http\Requests\Admin\UpdateBlogRequest;
+use App\Models\Cat;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Category;
 
 class AdminBlogController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         $blogs = Blog::latest("updated_at")->paginate(10);
@@ -53,9 +51,11 @@ class AdminBlogController extends Controller
 
     public function edit($id)
     {
+        $cats = Cat::all();
+        $categories = Category::all();
         $blog = Blog::findOrFail($id);
 
-        return view("admin.blogs.edit", ["blogs" => $blog]);
+        return view("admin.blogs.edit", ["blog" => $blog, "categories" => $categories, "cats" => $cats]);
     }
 
 
@@ -69,6 +69,8 @@ class AdminBlogController extends Controller
             $updateData["image"] = $request->file("image")->store("blogs", "public");
         }
 
+        $blog->category()->associate($updateData["category_id"]);
+        $blog->cats()->sync($updateData['cats'] ?? []);
         $blog->update($updateData);
 
         return to_route("admin.blogs.index")->with("success", "ブログを更新しました");
